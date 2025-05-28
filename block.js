@@ -6,7 +6,7 @@ export class Block {
    * @param {number} y      – world Y position (pixels)
    * @param {number} width  – block width (pixels)
    * @param {number} height – block height (pixels)
-   * @param {string} type   – e.g. 'stone', 'tree'
+   * @param {string} type   – e.g. 'stone', 'tree'. Unknown types default to a dark gray color.
    */
   constructor(x, y, width, height, type) {
     this.x      = x;
@@ -25,7 +25,7 @@ export class Block {
   draw(ctx) {
     ctx.save();
     // Choose fill style by type (placeholder – swap for sprites as needed)
-    ctx.fillStyle = this.colorMap[this.type] || '#444';
+    ctx.fillStyle = this.colorMap[this.type] || '#444'; // Fallback color
     ctx.fillRect(this.x, this.y, this.width, this.height);
 
     // Example: add a simple border

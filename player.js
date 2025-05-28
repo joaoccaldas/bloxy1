@@ -1,85 +1,121 @@
 // player.js
 
-import { checkAABB } from './collision.js';
-
-const SPRITE_PATH = 'assets/player/joao.png';  // <-- your sprite file
-
-// Preload a single Image instance
-const joaoImage = new Image();
-joaoImage.src = SPRITE_PATH;
+import { checkCollision } from './collision.js';
 
 export class Player {
   /**
-   * @param {number} x      – initial world X
-   * @param {number} y      – initial world Y
-   * @param {number} width  – hitbox width (px) & sprite draw width
-   * @param {number} height – hitbox height (px) & sprite draw height
+   * @param {number} x - initial x position
+   * @param {number} y - initial y position
+   * @param {number} width - player width
+   * @param {number} height - player height
+   * @param {string} spritePath - URL for player sprite
+   * @param {Function} onDeath - callback when health <= 0
    */
-  constructor(x = 100, y = 100, width = 32, height = 100) {
-    this.x      = x;
-    this.y      = y;
-    this.width  = width;
+  constructor(x, y, width, height, spritePath = '', onDeath = () => {}) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
     this.height = height;
+    this.sprite = new Image();
+    this.sprite.src = spritePath;
 
-    this.dirX  = 0;
-    this.dirY  = 0;
-    this.speed = 200;     // px/sec
+    // Movement deltas (unit vector)
+    this.dx = 0;
+    this.dy = 0;
+    // Speed in pixels per second
+    this.speed = 200;
 
-    // Use the preloaded image
-    this.sprite = joaoImage;
-
-    // Fallback color while loading
-    this.color = '#ff4444';
+    // Health
+    this.maxHealth = 100;
+    this.health    = this.maxHealth;
+    this.onDeath   = onDeath;
   }
 
-  update(delta, world) {
-    const dt = delta / 1000;
-    let newX = this.x + this.dirX * this.speed * dt;
-    let newY = this.y + this.dirY * this.speed * dt;
+  /**
+   * Set movement direction as a unit vector
+   * @param {number} dx
+   * @param {number} dy
+   */
+  setDirection(dx, dy) {
+    this.dx = dx;
+    this.dy = dy;
+  }
 
-    for (const block of world.blocks.values()) {
-      const b = block.getBounds();
-      // Horizontal
-      if (checkAABB(
-        { left: newX, top: this.y, right: newX + this.width, bottom: this.y + this.height },
-        b
-      )) newX = this.x;
-      // Vertical
-      if (checkAABB(
-        { left: this.x, top: newY, right: this.x + this.width, bottom: newY + this.height },
-        b
-      )) newY = this.y;
-    }
+  /**
+   * Update position and check for collisions
+   * @param {number} delta - ms since last frame
+   * @param {World} world
+   */
+  update(delta, world) {
+    // Move
+    const dist = (this.speed * delta) / 1000;
+    let newX = this.x + this.dx * dist;
+    let newY = this.y + this.dy * dist;
+
+    // Clamp to world bounds
+    newX = Math.max(0, Math.min(world.width - this.width, newX));
+    newY = Math.max(0, Math.min(world.height - this.height, newY));
 
     this.x = newX;
     this.y = newY;
   }
 
-  setDirection(dx, dy) {
-    this.dirX = dx;
-    this.dirY = dy;
-  }
-
+  /**
+   * Draw the player sprite at current position
+   * @param {CanvasRenderingContext2D} ctx
+   */
   draw(ctx) {
-    ctx.save();
-    if (this.sprite.complete && this.sprite.naturalWidth !== 0) {
-      // Draw the sprite scaled to width×height
+    if (this.sprite.complete && this.sprite.naturalWidth) {
       ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
     } else {
-      // Fallback rectangle
-      ctx.fillStyle = this.color;
+      // Placeholder box if sprite not loaded
+      ctx.fillStyle = '#00FF00';
       ctx.fillRect(this.x, this.y, this.width, this.height);
     }
-    ctx.restore();
   }
 
+  /**
+   * Apply damage and trigger death callback if needed
+   * @param {number} amount
+   */
+  takeDamage(amount) {
+    this.health -= amount;
+    if (this.health <= 0) {
+      this.health = 0;
+      this.onDeath();
+    }
+  }
+
+  /**
+   * Axis-aligned bounding box for collision
+   */
+  getAABB() {
+    return {
+      left: this.x,
+      top: this.y,
+      right: this.x + this.width,
+      bottom: this.y + this.height
+    };
+  }
+
+  /**
+   * Serialize player state
+   */
   serialize() {
-    return { x: this.x, y: this.y, color: this.color };
+    return {
+      x: this.x,
+      y: this.y,
+      health: this.health
+    };
   }
 
+  /**
+   * Load serialized state
+   * @param {{x:number,y:number,health:number}} data
+   */
   load(data) {
-    this.x     = data.x;
-    this.y     = data.y;
-    this.color = data.color;
+    this.x = data.x ?? this.x;
+    this.y = data.y ?? this.y;
+    this.health = data.health ?? this.health;
   }
 }

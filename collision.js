@@ -6,11 +6,11 @@
  * @param {{left:number, top:number, right:number, bottom:number}} b
  * @returns {boolean} true if the rectangles overlap
  */
-export function checkAABB(a, b) {
+export function checkCollision(a, b) {
   return (
     a.left   < b.right &&
     a.right  > b.left  &&
-    a.top    < b.bottom&&
+    a.top    < b.bottom &&
     a.bottom > b.top
   );
 }
