@@ -10,21 +10,21 @@ class HealthBar {
     this.visible = false;
     this.fadeTimer = 0;
   }
-
   update(mobX, mobY, currentHealth, maxHealth, deltaTime) {
     this.x = mobX + 4; // Center over mob
     this.y = mobY - 15; // Above mob
     this.currentHealth = currentHealth;
     this.maxHealth = maxHealth;
     
-    // Show when damaged
-    if (currentHealth < maxHealth) {
+    // Always show health bar when mob is damaged (persistent)
+    if (currentHealth < maxHealth && currentHealth > 0) {
       this.visible = true;
-      this.fadeTimer = 3000; // Show for 3 seconds
+      // Reset fade timer to keep it visible
+      this.fadeTimer = 1000; // Keep visible for 1 second after last damage
     }
     
-    // Fade out
-    if (this.fadeTimer > 0) {
+    // Only start fading if mob is at full health
+    if (currentHealth >= maxHealth && this.fadeTimer > 0) {
       this.fadeTimer -= deltaTime;
       if (this.fadeTimer <= 0) this.visible = false;
     }

@@ -1,8 +1,10 @@
 // world.js
 
-// Terrain background image
 const terrainImage = new Image();
 terrainImage.src = 'assets/scene/scene1.png';
+
+const shardImage = new Image();
+shardImage.src = 'assets/items/shard.png'; // <- add this sprite to assets
 
 export class World {
   /**
@@ -12,43 +14,93 @@ export class World {
    */
   constructor(tileSize = 64, cols = 20, rows = 15) {
     this.tileSize = tileSize;
-    this.width    = cols * tileSize;
-    this.height   = rows * tileSize;
+    this.width = cols * tileSize;
+    this.height = rows * tileSize;
+
+    // Place 3 shards at fixed or random positions
+    this.shards = [
+      { id: 1, x: 200, y: 150, collected: false },
+      { id: 2, x: 600, y: 300, collected: false },
+      { id: 3, x: 900, y: 600, collected: false },
+    ];
   }
 
-  /** Placeholder for future dynamic updates; no blocks to update */
   update(delta) {
-    // Intentionally empty
+    // Nothing dynamic in the world terrain yet
   }
 
-  /** Draws only the repeating terrain background */
+  /**
+   * @param {Player} player - check for shard pickup
+   * @returns {number[]} - list of newly collected shard IDs
+   */
+  checkShardCollection(player) {
+    const px = player.x + player.width / 2;
+    const py = player.y + player.height / 2;
+    const collected = [];
+
+    for (const shard of this.shards) {
+      if (shard.collected) continue;
+      const dx = shard.x - px;
+      const dy = shard.y - py;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 30) {
+        shard.collected = true;
+        collected.push(shard.id);
+      }
+    }
+
+    return collected;
+  }
+
+  /**
+   * Draw terrain and shards
+   * @param {CanvasRenderingContext2D} ctx
+   */
   draw(ctx) {
-    if (!terrainImage.complete || !terrainImage.naturalWidth) return;
-    const pattern = ctx.createPattern(terrainImage, 'repeat');
-    if (!pattern) return;
+    // Background terrain
+    if (terrainImage.complete && terrainImage.naturalWidth) {
+      const pattern = ctx.createPattern(terrainImage, 'repeat');
+      if (pattern) {
+        ctx.save();
+        ctx.fillStyle = pattern;
+        ctx.fillRect(0, 0, this.width, this.height);
+        ctx.restore();
+      }
+    }
 
-    ctx.save();
-    ctx.fillStyle = pattern;
-    ctx.fillRect(0, 0, this.width, this.height);
-    ctx.restore();
+    // Draw shards
+    for (const shard of this.shards) {
+      if (shard.collected) continue;
+      if (shardImage.complete && shardImage.naturalWidth) {
+        ctx.drawImage(shardImage, shard.x - 16, shard.y - 16, 32, 32);
+      } else {
+        // fallback
+        ctx.fillStyle = '#00FFFF';
+        ctx.beginPath();
+        ctx.arc(shard.x, shard.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
   }
 
-  /** Serialize world state (no blocks to save) */
+  /** Serialize world state */
   serialize() {
     return {
       tileSize: this.tileSize,
-      width:    this.width,
-      height:   this.height,
-      // No block data
-      blocks: []
+      width: this.width,
+      height: this.height,
+      shards: this.shards.map(s => ({ ...s }))
     };
   }
 
-  /** Load world state (ignores block data) */
+  /** Load world state */
   load(data) {
-    this.tileSize = data.tileSize;
-    this.width    = data.width;
-    this.height   = data.height;
-    // blocks ignored
+    this.tileSize = data.tileSize ?? this.tileSize;
+    this.width = data.width ?? this.width;
+    this.height = data.height ?? this.height;
+
+    if (Array.isArray(data.shards)) {
+      this.shards = data.shards.map(s => ({ ...s }));
+    }
   }
 }

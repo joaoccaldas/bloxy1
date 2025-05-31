@@ -44,4 +44,4 @@ export class Block {
       bottom: this.y + this.height
     };
   }
-}
+}\

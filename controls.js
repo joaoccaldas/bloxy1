@@ -5,12 +5,14 @@ export class Controls {
    * @param {Player} player – expects player.setDirection(dx, dy), x, y, width, height
    * @param {HTMLCanvasElement} canvas – game canvas for input capture
    * @param {Array} mobs – array of mob objects with {x, y, width, height, takeDamage, health}
+   * @param {Function} onDamageDealt – callback when damage is dealt to a mob
    */
-  constructor(player, canvas, mobs = []) {
+  constructor(player, canvas, mobs = [], onDamageDealt = null) {
     if (!canvas) throw new Error('Controls requires a canvas element');
     this.player = player;
     this.canvas = canvas;
     this.mobs = mobs;
+    this.onDamageDealt = onDamageDealt;
 
     // Movement state
     this.keys = {};
@@ -124,7 +126,6 @@ export class Controls {
     this.joystickActive = false;
     this.dragOffset     = { x: 0, y: 0 };
   }
-
   /** Attack logic: damage mobs within range */
   handleAttack(targetX, targetY) {
     const originX = (this.player.x || 0) + ((this.player.width  || 0) / 2);
@@ -140,15 +141,34 @@ export class Controls {
       const my = (mob.y || 0) + ((mob.height || 0) / 2);
       const distToMob = Math.hypot(mx - originX, my - originY);
       if (distToMob <= this.attackRange) {
+        let actualDamage = 0;
+        
         if (typeof mob.takeDamage === 'function') {
-          mob.takeDamage(this.attackDamage);
+          const prevHealth = mob.health || 0;
+          actualDamage = mob.takeDamage(this.attackDamage);
+          
+          // Call damage callback if provided
+          if (this.onDamageDealt && actualDamage > 0) {
+            this.onDamageDealt(mob, actualDamage, mx, my);
+          }
         } else if (mob.health !== undefined) {
-          mob.health -= this.attackDamage;
+          const prevHealth = mob.health;
+          mob.health = Math.max(0, mob.health - this.attackDamage);
+          actualDamage = prevHealth - mob.health;
+          
+          // Call damage callback if provided
+          if (this.onDamageDealt && actualDamage > 0) {
+            this.onDamageDealt(mob, actualDamage, mx, my);
+          }
         }
+        
         if (mob.health !== undefined && mob.health <= 0) {
           this.mobs.splice(i, 1);
         }
-        console.log(`Mob at (${mx.toFixed(0)},${my.toFixed(0)}) took ${this.attackDamage} damage.`);
+        
+        if (actualDamage > 0) {
+          console.log(`Mob at (${mx.toFixed(0)},${my.toFixed(0)}) took ${actualDamage} damage.`);
+        }
       }
     }
   }
