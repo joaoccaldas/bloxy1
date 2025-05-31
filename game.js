@@ -139,13 +139,19 @@ export class Game {
     for (let i = this.mobs.length - 1; i >= 0; i--) {
       const mob = this.mobs[i];
       const prevHealth = mob.health;
+      const isBoss = mob.width >= 90; // Boss identification
       mob.update(delta, this.player);
       if (mob.health <= 0 && prevHealth > 0) {
-        const points = 100;
+        const points = isBoss ? 500 : 100; // More points for boss
         this.mobs.splice(i, 1);
         this.kills++;
         this.score += points;
         this.damageNumbers.push(new DamageNumber(mob.x + mob.width / 2, mob.y - 10, `+${points}`, '#00ff00'));
+        
+        // Check if boss was defeated
+        if (isBoss && this.bossSpawned) {
+          this.onBossDefeated();
+        }
       }
     }
 
@@ -197,6 +203,58 @@ export class Game {
     this.mobs.push(boss);
     this.bossSpawned = true;
     this.damageNumbers.push(new DamageNumber(x + 48, y - 40, 'BOSS SPAWNED!', '#FF00FF'));
+  }
+
+  onBossDefeated() {
+    this.damageNumbers.push(new DamageNumber(this.player.x, this.player.y - 40, 'BOSS DEFEATED!', '#FFD700'));
+    this.damageNumbers.push(new DamageNumber(this.player.x, this.player.y - 60, 'VICTORY!', '#FFD700'));
+    
+    // Start restart after a short delay to show victory message
+    setTimeout(() => {
+      this.restartGame();
+    }, 2000);
+  }
+  restartGame() {
+    // Reset game state
+    this.kills = 0;
+    this.score = 0;
+    this.shardsCollected.clear();
+    this.bossSpawned = false;
+    this.cutsceneStarted = false;
+    this.damageNumbers = [];
+    
+    // Reset player health and position
+    this.player.health = this.player.maxHealth;
+    this.player.x = 100;
+    this.player.y = 100;
+    
+    // Reset world shards
+    this.world.shards.forEach(shard => {
+      shard.collected = false;
+    });
+    
+    // Clear existing mobs
+    this.mobs.length = 0;
+    
+    // Spawn new mobs
+    const spritePool = characters.map(c => c.sprite);
+    for (let i = 0; i < 5; i++) {
+      const x = Math.random() * (this.world.width - 64);
+      const y = Math.random() * (this.world.height - 64);
+      const sprite = spritePool[Math.floor(Math.random() * spritePool.length)];
+      this.mobs.push(new Mob(x, y, sprite));
+    }
+    
+    // Update controls with new mobs array
+    if (this.controls) {
+      this.controls.destroy();
+    }
+    this.controls = new Controls(this.player, this.canvas, this.mobs, (mob, damage, x, y) => this.onMobDamaged(mob, damage, x, y));
+    
+    this.damageNumbers.push(new DamageNumber(this.player.x, this.player.y - 40, 'NEW ADVENTURE BEGINS!', '#00FF00'));
+    
+    // Ensure we're in playing state
+    this.state = 'playing';
   }
 
   _drawUI(delta) {

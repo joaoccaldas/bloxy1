@@ -51,12 +51,12 @@ export class World {
 
     return collected;
   }
-
   /**
    * Draw terrain and shards
    * @param {CanvasRenderingContext2D} ctx
+   * @param {number} [pulseTimer] - Timer for pulsing effect
    */
-  draw(ctx) {
+  draw(ctx, pulseTimer = 0) {
     // Background terrain
     if (terrainImage.complete && terrainImage.naturalWidth) {
       const pattern = ctx.createPattern(terrainImage, 'repeat');
@@ -68,18 +68,27 @@ export class World {
       }
     }
 
-    // Draw shards
+    // Draw shards with pulsing effect
     for (const shard of this.shards) {
       if (shard.collected) continue;
+      
+      ctx.save();
+      // Add pulsing glow effect
+      const pulse = Math.sin(pulseTimer / 300) * 0.3 + 0.7; // Oscillate between 0.4 and 1.0
+      ctx.globalAlpha = pulse;
+      
       if (shardImage.complete && shardImage.naturalWidth) {
         ctx.drawImage(shardImage, shard.x - 16, shard.y - 16, 32, 32);
       } else {
-        // fallback
+        // fallback with glow
         ctx.fillStyle = '#00FFFF';
+        ctx.shadowColor = '#00FFFF';
+        ctx.shadowBlur = 10 * pulse;
         ctx.beginPath();
         ctx.arc(shard.x, shard.y, 12, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.restore();
     }
   }
 
