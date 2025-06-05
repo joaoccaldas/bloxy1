@@ -6,13 +6,15 @@ export class Controls {
    * @param {HTMLCanvasElement} canvas – game canvas for input capture
    * @param {Array} mobs – array of mob objects with {x, y, width, height, takeDamage, health}
    * @param {Function} onDamageDealt – callback when damage is dealt to a mob
+   * @param {Camera} camera – camera for coordinate transformation
    */
-  constructor(player, canvas, mobs = [], onDamageDealt = null) {
+  constructor(player, canvas, mobs = [], onDamageDealt = null, camera = null) {
     if (!canvas) throw new Error('Controls requires a canvas element');
     this.player = player;
     this.canvas = canvas;
     this.mobs = mobs;
     this.onDamageDealt = onDamageDealt;
+    this.camera = camera; // Add camera reference
 
     // Movement state
     this.keys = {};
@@ -20,11 +22,12 @@ export class Controls {
     this.joystickStart  = null;
     this.dragOffset     = { x: 0, y: 0 };
     this.joystickRadius = 50;    // max travel from start
-    this.joystickDeadZone = 10;  // pixels
-
-    // Attack parameters
+    this.joystickDeadZone = 10;  // pixels    // Attack parameters
     this.attackRange = 100;      // pixels
     this.attackDamage = 25;
+    this.showAttackRange = false; // For debugging/visual feedback
+    this.lastAttackTime = 0;
+    this.attackCooldown = 200; // 200ms cooldown between attacks
 
     // Bind methods
     this._onKeyDown   = this.onKeyDown.bind(this);
@@ -77,19 +80,36 @@ export class Controls {
       y: (clientY - rect.top)  * scaleY
     };
   }
-
   onKeyDown(e) {
     this.keys[e.key.toLowerCase()] = true;
+    
+    // Handle spacebar attack
+    if (e.key === ' ') {
+      e.preventDefault();
+      // Attack at player's current position + some range
+      const centerX = this.player.x + this.player.width / 2;
+      const centerY = this.player.y + this.player.height / 2;
+      this.handleAttack(centerX, centerY);
+    }
   }
 
   onKeyUp(e) {
     this.keys[e.key.toLowerCase()] = false;
-  }
-
-  onMouseDown(e) {
+  }  onMouseDown(e) {
     e.preventDefault();
     const { x, y } = this.normalizeCoords(e.clientX, e.clientY);
-    this.handleAttack(x, y);
+    
+    // Convert screen coordinates to world coordinates if camera exists
+    let worldX = x;
+    let worldY = y;
+    
+    if (this.camera && typeof this.camera.screenToWorld === 'function') {
+      const worldCoords = this.camera.screenToWorld(x, y);
+      worldX = worldCoords.x;
+      worldY = worldCoords.y;
+    }
+    
+    this.handleAttack(worldX, worldY);
   }
 
   onMouseUp(/*e*/) {
@@ -119,27 +139,70 @@ export class Controls {
     }
     this.dragOffset = { x: dx, y: dy };
   }
-
   onTouchEnd(e) {
     e.preventDefault();
+    
+    // If this was a quick tap (not a drag), treat it as an attack
+    if (this.joystickActive) {
+      const touch = e.changedTouches[0];
+      const { x, y } = this.normalizeCoords(touch.clientX, touch.clientY);
+      const tapDistance = Math.hypot(x - this.joystickStart.x, y - this.joystickStart.y);
+      
+      // If the drag distance was very small, treat as tap/attack
+      if (tapDistance < 20) {
+        // Convert screen coordinates to world coordinates if camera exists
+        let worldX = x;
+        let worldY = y;
+        
+        if (this.camera && typeof this.camera.screenToWorld === 'function') {
+          const worldCoords = this.camera.screenToWorld(x, y);
+          worldX = worldCoords.x;
+          worldY = worldCoords.y;
+        }
+        
+        this.handleAttack(worldX, worldY);
+      }
+    }
+    
     // End joystick on any changed touch
     this.joystickActive = false;
     this.dragOffset     = { x: 0, y: 0 };
-  }
-  /** Attack logic: damage mobs within range */
+  }  /** Attack logic: damage mobs within range */
   handleAttack(targetX, targetY) {
+    // Check attack cooldown
+    const now = Date.now();
+    if (now - this.lastAttackTime < this.attackCooldown) {
+      return;
+    }
+    this.lastAttackTime = now;
+    
     const originX = (this.player.x || 0) + ((this.player.width  || 0) / 2);
     const originY = (this.player.y || 0) + ((this.player.height || 0) / 2);
     const dx = targetX - originX;
     const dy = targetY - originY;
-    if (Math.hypot(dx, dy) > this.attackRange) return;
+    const attackDistance = Math.hypot(dx, dy);
+    
+    console.log(`Attack attempted at world coords (${targetX.toFixed(1)}, ${targetY.toFixed(1)})`);
+    console.log(`Player center: (${originX.toFixed(1)}, ${originY.toFixed(1)})`);
+    console.log(`Attack distance: ${attackDistance.toFixed(1)}, max range: ${this.attackRange}`);
+    
+    // Show attack range temporarily for visual feedback
+    this.showAttackRange = true;
+    setTimeout(() => { this.showAttackRange = false; }, 300);
+    
+    if (attackDistance > this.attackRange) {
+      console.log('Attack out of range');
+      return;
+    }
 
+    let mobsHit = 0;
     for (let i = this.mobs.length - 1; i >= 0; i--) {
       const mob = this.mobs[i];
       if (!mob) continue;
       const mx = (mob.x || 0) + ((mob.width  || 0) / 2);
       const my = (mob.y || 0) + ((mob.height || 0) / 2);
       const distToMob = Math.hypot(mx - originX, my - originY);
+      
       if (distToMob <= this.attackRange) {
         let actualDamage = 0;
         
@@ -167,9 +230,16 @@ export class Controls {
         }
         
         if (actualDamage > 0) {
-          console.log(`Mob at (${mx.toFixed(0)},${my.toFixed(0)}) took ${actualDamage} damage.`);
+          mobsHit++;
+          console.log(`Mob at (${mx.toFixed(0)},${my.toFixed(0)}) took ${actualDamage} damage. Health: ${mob.health}/${mob.maxHealth || 'unknown'}`);
         }
       }
+    }
+    
+    if (mobsHit === 0) {
+      console.log('No mobs in range to attack');
+    } else {
+      console.log(`Hit ${mobsHit} mob(s)`);
     }
   }
 
@@ -201,7 +271,6 @@ export class Controls {
 
     this.player.setDirection(dx, dy);
   }
-
   /** Optional: visualize joystick on a given 2D context */
   drawJoystick(ctx) {
     if (!this.joystickActive || !this.joystickStart) return;
@@ -220,6 +289,23 @@ export class Controls {
       Math.PI * 2
     );
     ctx.fill();
+    ctx.restore();
+  }
+
+  /** Draw attack range indicator (call from game's draw method with world coordinates) */
+  drawAttackRange(ctx) {
+    if (!this.showAttackRange) return;
+    
+    const centerX = this.player.x + this.player.width / 2;
+    const centerY = this.player.y + this.player.height / 2;
+    
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 100, 100, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, this.attackRange, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.restore();
   }
 }

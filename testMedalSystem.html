@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medal System Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #2c3e50;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            border: 2px solid #3498db;
+            display: block;
+            margin: 20px auto;
+            background: #1a252f;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .info {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .stats {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: left;
+        }
+        .stats h3 {
+            margin-top: 0;
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h1>🏅 Medal System Test</h1>
+        <p>Test the comprehensive medal collection and points system!</p>
+        
+        <div class="controls">
+            <button onclick="startGame()">Start New Game</button>
+            <button onclick="loadGame()">Load Saved Game</button>
+            <button onclick="saveGame()">Save Game</button>
+            <button onclick="toggleDebug()">Toggle Debug Mode</button>
+            <button onclick="showStats()">Show Statistics</button>
+            <button onclick="clearSave()">Clear Save Data</button>
+        </div>
+
+        <canvas id="gameCanvas" width="1000" height="800"></canvas>
+
+        <div class="controls">
+            <button onclick="spawnMedals()">🏅 Spawn Test Medals</button>
+            <button onclick="triggerAchievement()">🏆 Test Achievement</button>
+            <button onclick="resetMedals()">🔄 Reset Medal System</button>
+        </div>
+
+        <div id="gameStats" class="stats" style="display:none;">
+            <h3>Game Statistics</h3>
+            <div id="statsContent"></div>
+        </div>
+
+        <div class="info">
+            <h3>🎮 Controls</h3>
+            <p><strong>Movement:</strong> WASD or Arrow Keys</p>
+            <p><strong>Attack:</strong> Mouse Click</p>
+            <p><strong>Pause:</strong> Escape</p>
+            <p><strong>Medal Collection:</strong> Walk over medals to collect them!</p>
+            
+            <h3>🏅 Medal Types</h3>
+            <ul style="text-align: left; display: inline-block;">
+                <li><span style="color: #cd7f32;">Bronze</span> - 100 points (Common)</li>
+                <li><span style="color: #c0c0c0;">Silver</span> - 250 points (Uncommon)</li>
+                <li><span style="color: #ffd700;">Gold</span> - 500 points (Rare)</li>
+                <li><span style="color: #e5e4e2;">Platinum</span> - 1000 points (Epic)</li>
+                <li><span style="color: #b9f2ff;">Diamond</span> - 2500 points (Legendary)</li>
+            </ul>
+
+            <h3>🏆 Features</h3>
+            <ul style="text-align: left; display: inline-block;">
+                <li>✨ Visual effects (glow, particles, animations)</li>
+                <li>🔢 Streak multipliers and combo system</li>
+                <li>🏆 10 different achievements to unlock</li>
+                <li>📊 Comprehensive statistics tracking</li>
+                <li>💾 Save/load system integration</li>
+                <li>🎯 Time bonuses and performance rewards</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        import { GameRefactored } from './GameRefactored.js';
+
+        let game = null;
+        let debugMode = false;
+
+        window.startGame = function() {
+            if (game) {
+                game.destroy();
+            }
+            
+            game = new GameRefactored(
+                'gameCanvas',
+                0, // Character ID
+                (charId) => console.log('Game paused'),
+                (charId) => console.log('Game over')
+            );
+            
+            game.init(false); // Start new game
+            console.log('🏅 Medal system test started!');
+            showStats();
+        };
+
+        window.loadGame = function() {
+            if (game) {
+                game.destroy();
+            }
+            
+            game = new GameRefactored(
+                'gameCanvas',
+                0,
+                (charId) => console.log('Game paused'),
+                (charId) => console.log('Game over')
+            );
+            
+            const metadata = game.getSaveMetadata();
+            if (metadata) {
+                game.init(true); // Load existing save
+                console.log('Game loaded:', metadata);
+                showStats();
+            } else {
+                console.log('No save data found, starting new game');
+                game.init(false);
+                showStats();
+            }
+        };
+
+        window.saveGame = function() {
+            if (game) {
+                const success = game.save();
+                console.log('Save result:', success);
+                alert(success ? 'Game saved successfully!' : 'Failed to save game');
+            }
+        };
+
+        window.toggleDebug = function() {
+            debugMode = !debugMode;
+            if (game) {
+                game.setDebugMode(debugMode);
+                console.log('Debug mode:', debugMode);
+            }
+        };
+
+        window.showStats = function() {
+            const statsDiv = document.getElementById('gameStats');
+            const contentDiv = document.getElementById('statsContent');
+            
+            if (game) {
+                const stats = game.getStats();
+                const medalStats = game.medalSystem.getStatistics();
+                const achievements = game.medalSystem.getAchievements();
+                
+                contentDiv.innerHTML = `
+                    <h4>🎯 Game Score</h4>
+                    <p>Current Score: ${stats.currentScore}</p>
+                    <p>High Score: ${stats.highScore}</p>
+                    <p>Kills: ${stats.currentKills}</p>
+                    
+                    <h4>🏅 Medal Statistics</h4>
+                    <p>Total Medal Points: ${game.medalSystem.getTotalPoints()}</p>
+                    <p>Medals Collected: ${medalStats.medalsCollected}</p>
+                    <p>Streak Record: ${medalStats.longestStreak}</p>
+                    <p>Highest Combo: ${medalStats.highestCombo}</p>
+                    <p>Distance Traveled: ${medalStats.distanceTraveled.toFixed(1)}</p>
+                    
+                    <h4>🏆 Achievements (${achievements.length}/10)</h4>
+                    <ul style="list-style-type: none; padding: 0;">
+                        ${achievements.map(a => `<li>✅ ${a.name} - ${a.description}</li>`).join('')}
+                    </ul>
+                    
+                    <h4>📊 Medal Breakdown</h4>
+                    <p>Bronze: ${medalStats.medalsByType.bronze || 0}</p>
+                    <p>Silver: ${medalStats.medalsByType.silver || 0}</p>
+                    <p>Gold: ${medalStats.medalsByType.gold || 0}</p>
+                    <p>Platinum: ${medalStats.medalsByType.platinum || 0}</p>
+                    <p>Diamond: ${medalStats.medalsByType.diamond || 0}</p>
+                `;
+                
+                statsDiv.style.display = 'block';
+            } else {
+                contentDiv.innerHTML = '<p>No game active</p>';
+                statsDiv.style.display = 'block';
+            }
+        };
+
+        window.spawnMedals = function() {
+            if (game && game.medalSystem) {
+                // Manually spawn some test medals
+                for (let i = 0; i < 5; i++) {
+                    const x = Math.random() * 800 + 100;
+                    const y = Math.random() * 600 + 100;
+                    const types = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
+                    const type = types[Math.floor(Math.random() * types.length)];
+                    
+                    game.medalSystem.spawnMedal(x, y, type);
+                }
+                console.log('🏅 Test medals spawned!');
+            }
+        };
+
+        window.triggerAchievement = function() {
+            if (game && game.medalSystem) {
+                // Force check achievements to potentially unlock one
+                game.medalSystem.checkAchievements();
+                showStats();
+                console.log('🏆 Achievement check triggered!');
+            }
+        };
+
+        window.resetMedals = function() {
+            if (game && game.medalSystem) {
+                game.medalSystem.reset();
+                console.log('🔄 Medal system reset!');
+                showStats();
+            }
+        };
+
+        window.clearSave = function() {
+            if (confirm('Are you sure you want to clear all save data?')) {
+                localStorage.clear();
+                alert('Save data cleared!');
+                console.log('💾 Save data cleared');
+            }
+        };
+
+        // Auto-start the game for testing
+        window.addEventListener('load', () => {
+            console.log('🏅 Medal System Test Page Loaded');
+            console.log('Click "Start New Game" to begin testing!');
+        });
+
+        // Add some helpful console commands
+        window.game = () => game;
+        window.medalSystem = () => game?.medalSystem;
+        
+        console.log('🏅 Medal System Test Commands:');
+        console.log('- game() - Get current game instance');
+        console.log('- medalSystem() - Get medal system instance');
+        console.log('- startGame() - Start new game');
+        console.log('- loadGame() - Load saved game');
+        console.log('- spawnMedals() - Spawn test medals');
+    </script>
+</body>
+</html>

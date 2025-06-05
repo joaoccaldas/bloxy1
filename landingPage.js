@@ -1,8 +1,12 @@
 // landingPage.js
 
 import { Game } from './game.js';
+import { GameRefactored } from './GameRefactored.js';
 import { MenuSystem } from './menuSystem.js';
 import { Rivals } from './rivals.js';
+
+// Configuration to toggle between original and refactored systems
+const USE_REFACTORED_SYSTEM = false; // Set to true to use the new modular system
 
 const canvasId   = 'gameCanvas';
 const canvas     = document.getElementById(canvasId);
@@ -10,10 +14,11 @@ const landing    = document.getElementById('landingScreen');
 const btnStart   = document.getElementById('btnStart');
 const btnLoad    = document.getElementById('btnLoad');
 const btnRivals  = document.getElementById('btnRivals');
+const btnShop    = document.getElementById('btnShop');
 const inputName  = document.getElementById('playerName');
 
-if (!canvas || !landing || !btnStart || !btnLoad || !btnRivals || !inputName) {
-  throw new Error('Required elements #gameCanvas, #landingScreen, #btnStart, #btnLoad, #btnRivals, or #playerName not found');
+if (!canvas || !landing || !btnStart || !btnLoad || !btnRivals || !btnShop || !inputName) {
+  throw new Error('Required elements #gameCanvas, #landingScreen, #btnStart, #btnLoad, #btnRivals, #btnShop, or #playerName not found');
 }
 
 let game = null;
@@ -58,6 +63,11 @@ function startMenu() {
     onSaveGame: () => {
       if (game) game.save();
     },
+    onShop: () => {
+      console.log('Shop button clicked! Opening shop interface...');
+      // TODO: Implement shop interface
+      alert('Shop feature coming soon!');
+    },
     onExitGame: () => {
       if (game) game.exitToMenu();
     }
@@ -71,15 +81,31 @@ function startGame(loadExisting = false) {
   if (game)      { game.destroy();      game = null; }
 
   showCanvas();
-  game = new Game(
-    canvasId,
-    selectedCharacterId,
-    startMenu,
-    (charId) => {
-      alert('Game Over');
-      startMenu();
-    }
-  );
+  
+  if (USE_REFACTORED_SYSTEM) {
+    // Use the new refactored system
+    game = new GameRefactored(
+      canvasId,
+      selectedCharacterId,
+      startMenu, // pause callback
+      (charId) => { // game over callback
+        alert('Game Over');
+        startMenu();
+      }
+    );
+  } else {
+    // Use the original system
+    game = new Game(
+      canvasId,
+      selectedCharacterId,
+      startMenu,
+      (charId) => {
+        alert('Game Over');
+        startMenu();
+      }
+    );
+  }
+  
   game.init(loadExisting);
 }
 
@@ -106,10 +132,18 @@ function showRivals() {
   );
 }
 
+/** Show shop interface */
+function showShop() {
+  console.log('Shop button clicked! Opening shop interface...');
+  // TODO: Implement shop interface
+  alert('Welcome to the Shop!\n\nShop features coming soon:\n• Character skins\n• Weapons\n• Power-ups\n• Special abilities');
+}
+
 // Button event listeners
 btnStart.addEventListener('click', () => startGame(false));
 btnLoad.addEventListener('click',  () => startGame(true));
 btnRivals.addEventListener('click', showRivals);
+btnShop.addEventListener('click', showShop);
 
 // Allow ESC to pause when playing
 window.addEventListener('keydown', e => {

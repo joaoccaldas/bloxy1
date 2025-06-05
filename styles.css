@@ -1,5 +1,10 @@
 /* styles.css */
 
+/* Add responsive viewport handling */
+* {
+  box-sizing: border-box;
+}
+
 /* Global reset */
 html, body {
   margin: 0;
@@ -7,6 +12,8 @@ html, body {
   background: #000;
   overflow: hidden;
   height: 100%;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Canvas centering and aspect-ratio enforcement */
@@ -23,6 +30,15 @@ canvas {
   background-color: #1C7ED6;
   display: block;
   z-index: 1;
+  image-rendering: pixelated; /* Better for pixel art games */
+}
+
+/* Responsive canvas sizing */
+@media (max-width: 768px) {
+  canvas {
+    max-width: 100vw;
+    max-height: 100vh;
+  }
 }
 
 /* Landing screen overlay */
@@ -40,7 +56,7 @@ canvas {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: clamp(12px, 2vw, 24px);
   z-index: 2;
 }
 
@@ -65,32 +81,34 @@ canvas {
 #landingScreen h1 {
   color: #FFFFFF;
   font-family: sans-serif;
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 4vw, 3rem);
   margin: 0;
+  text-align: center;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 #landingScreen input {
-  width: 240px;
-  padding: 12px;
-  font-size: 1rem;
+  width: min(240px, 80vw);
+  padding: clamp(8px, 1.5vw, 16px);
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
   border: 2px solid #333;
-  border-radius: 8px;
+  border-radius: clamp(6px, 1vw, 12px);
   outline: none;
   background: rgba(255, 255, 255, 0.9);
 }
 
 #landingScreen button {
-  width: 240px;
-  padding: 12px;
-  font-size: 1rem;
+  width: min(240px, 80vw);
+  padding: clamp(8px, 1.5vw, 16px);
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
   border: 2px solid #333;
-  border-radius: 8px;
+  border-radius: clamp(6px, 1vw, 12px);
   background: rgba(255, 255, 255, 0.9);
   color: #333;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: bold;
-  margin: 8px;
+  margin: clamp(4px, 1vw, 12px);
 }
 
 #landingScreen button:hover {
@@ -102,8 +120,152 @@ canvas {
 #playerName {
   background: rgba(255, 255, 255, 0.9);
   border: 2px solid #333;
-  padding: 8px 16px;
+  padding: clamp(6px, 1.2vw, 12px) clamp(12px, 2vw, 20px);
   margin: 8px;
   border-radius: 4px;
   font-size: 14px;
+}
+
+/* Shop button positioned in top-left corner with responsive scaling */
+.shop-button {
+  position: absolute !important;
+  top: max(10px, 1.2vh) !important;
+  left: max(10px, 1.2vw) !important;
+  width: auto !important;
+  padding: max(4px, 0.5vmin) !important;
+  background: rgba(255, 215, 0, 0.9) !important;
+  border: max(1px, 0.1vmin) solid #FFA500 !important;
+  border-radius: max(4px, 0.6vmin) !important;
+  transition: all 0.3s ease !important;
+  z-index: 10 !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  max-width: 60px !important;
+  max-height: 60px !important;
+}
+
+.shop-button:hover {
+  background: rgba(255, 193, 7, 1) !important;
+  transform: translateY(max(-1px, -0.1vmin)) !important;
+  box-shadow: 0 max(2px, 0.2vmin) max(6px, 0.6vmin) rgba(255, 215, 0, 0.4) !important;
+}
+
+.shop-button img {
+  width: clamp(20px, 3vmin, 40px);
+  height: clamp(20px, 3vmin, 40px);
+  display: block;
+}
+
+.shop-button img[src=""] {
+  display: none;
+}
+
+.shop-button:empty::after,
+.shop-button img[src=""]:after {
+  content: "SHOP";
+  font-size: clamp(8px, 1.2vmin, 14px);
+  font-weight: bold;
+  color: #333;
+  display: block;
+  padding: max(2px, 0.2vmin) max(4px, 0.4vmin);
+}
+
+/* Improved media queries for better mobile responsiveness */
+@media (max-width: 768px) and (orientation: portrait) {
+  .shop-button {
+    top: max(15px, 2vh) !important;
+    left: max(15px, 2vw) !important;
+    padding: max(6px, 1vmin) !important;
+    border-radius: max(6px, 1vmin) !important;
+  }
+  
+  .shop-button img {
+    width: clamp(16px, 4vmin, 28px);
+    height: clamp(16px, 4vmin, 28px);
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-button {
+    top: max(20px, 3vh) !important;
+    left: max(20px, 3vw) !important;
+    padding: max(8px, 1.5vmin) !important;
+  }
+  
+  .shop-button img {
+    width: clamp(14px, 5vmin, 24px);
+    height: clamp(14px, 5vmin, 24px);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .shop-button {
+    top: max(8px, 1vh) !important;
+    left: max(8px, 1vw) !important;
+    padding: max(3px, 0.3vmin) !important;
+  }
+  
+  .shop-button img {
+    width: clamp(16px, 2.5vmin, 32px);
+    height: clamp(16px, 2.5vmin, 32px);
+  }
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 320px) {
+  .shop-button {
+    top: 5vw !important;
+    left: 5vw !important;
+    padding: 2.5vw !important;
+  }
+  
+  .shop-button img {
+    width: clamp(16px, 6vw, 24px);
+    height: clamp(16px, 6vw, 24px);
+  }
+  
+  #landingScreen {
+    gap: clamp(8px, 1.5vw, 16px);
+  }
+  
+  #landingScreen h1 {
+    font-size: clamp(1.2rem, 5vw, 2rem);
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  #landingScreen button,
+  .shop-button {
+    min-height: 44px; /* Minimum touch target size */
+    min-width: 44px;
+  }
+  
+  #landingScreen button {
+    padding: clamp(12px, 2vw, 20px);
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  #landingScreen {
+    gap: clamp(6px, 1vw, 12px);
+  }
+  
+  #landingScreen h1 {
+    font-size: clamp(1rem, 3vh, 2rem);
+  }
+  
+  .shop-button {
+    top: 2vh !important;
+    left: 2vh !important;
+  }
 }

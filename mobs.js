@@ -2,6 +2,15 @@
 
 import { checkCollision } from './collision.js';
 
+// Random names pool for mobs
+const MOB_NAMES = [
+  'Razor', 'Spike', 'Venom', 'Blaze', 'Frost', 'Shadow', 'Thunder', 'Storm',
+  'Bolt', 'Claw', 'Fang', 'Hunter', 'Warrior', 'Beast', 'Rage', 'Fury',
+  'Titan', 'Demon', 'Ghost', 'Phantom', 'Reaper', 'Slayer', 'Crusher', 'Bane',
+  'Savage', 'Wild', 'Fierce', 'Brutal', 'Deadly', 'Terror', 'Menace', 'Doom',
+  'Striker', 'Fighter', 'Guardian', 'Destroyer', 'Predator', 'Stalker', 'Prowler', 'Rampage'
+];
+
 // Add this health bar class at the top
 class HealthBar {
   constructor() {
@@ -63,8 +72,7 @@ export class Mob {
    * @param {number} y         - Initial Y position
    * @param {string[]} sprites - Array of sprite URLs to choose from
    * @param {{health?: number, speed?: number, width?: number, height?: number}} options
-   */
-  constructor(x, y, sprites, options = {}) {
+   */  constructor(x, y, sprites, options = {}) {
     this.x = x;
     this.y = y;
     this.width  = options.width  || 48;
@@ -73,18 +81,21 @@ export class Mob {
     this.speed = options.speed || 60;          // pixels per second
     this.health = options.health || 100;
     this.maxHealth = this.health; // Add this line
-    this.damage = options.damage || 10;
+    this.damage = options.damage || 10;    // Generate random name for this mob
+    this.name = options.name || MOB_NAMES[Math.floor(Math.random() * MOB_NAMES.length)];
 
     // Add health bar
     this.healthBar = new HealthBar();
+    
+    // Weather effects
+    this.weatherSpeedMultiplier = 1.0;
+    this.weatherVisibilityMultiplier = 1.0;
 
     // Movement state
     this.dx = 0;
     this.dy = 0;
     this.changeDirCooldown = 0;
-    this.hitCooldown       = 0;
-
-    // Choose random sprite
+    this.hitCooldown       = 0;// Choose random sprite
     const spritePath = Array.isArray(sprites) && sprites.length
       ? sprites[Math.floor(Math.random() * sprites.length)]
       : sprites;
@@ -105,10 +116,9 @@ export class Mob {
       this.dx = dirs[Math.floor(Math.random() * 3)];
       this.dy = dirs[Math.floor(Math.random() * 3)];
       this.changeDirCooldown = 1000 + Math.random() * 2000;
-    }
-
-    // Move
-    const distance = (this.speed * delta) / 1000;
+    }    // Move with weather effects
+    const effectiveSpeed = this.speed * (this.weatherSpeedMultiplier || 1.0);
+    const distance = (effectiveSpeed * delta) / 1000;
     this.x += this.dx * distance;
     this.y += this.dy * distance;
 
@@ -136,10 +146,24 @@ export class Mob {
       // Fallback box
       ctx.fillStyle = '#AA0000';
       ctx.fillRect(this.x, this.y, this.width, this.height);
-    }
-
-    // Draw health bar
+    }    // Draw health bar
     this.healthBar.draw(ctx);
+
+    // Draw name with enhanced visibility
+    ctx.save();
+    ctx.font = 'bold 12px Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    
+    // Text shadow for better visibility
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 3;
+    ctx.strokeText(this.name, this.x + this.width / 2, this.y - 25);
+    
+    // Main text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(this.name, this.x + this.width / 2, this.y - 25);
+    ctx.restore();
   }
 
   /**
@@ -163,10 +187,9 @@ export class Mob {
     this.health -= amount;
     // Health bar will automatically show when health < maxHealth
   }
-
   /**
    * Serialize mob state for saving.
-   * @returns {{x:number,y:number,width:number,height:number,sprite:string,options:{health:number,speed:number,damage:number}}}
+   * @returns {{x:number,y:number,width:number,height:number,sprite:string,options:{health:number,speed:number,damage:number,name:string}}}
    */
   serialize() {
     return {
@@ -178,7 +201,8 @@ export class Mob {
       options: {
         health: this.health,
         speed:  this.speed,
-        damage: this.damage
+        damage: this.damage,
+        name: this.name
       }
     };
   }

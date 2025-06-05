@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Test Runner</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .test-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .test-output {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196F3; }
+        .canvas-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        canvas {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: #000;
+        }
+        .progress {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #4CAF50, #2196F3);
+            height: 20px;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Game System Test Runner</h1>
+        
+        <div class="test-controls">
+            <button id="runFunctional">Functional Tests</button>
+            <button id="runPerformance">Performance Tests</button>
+            <button id="runCompatibility">Compatibility Tests</button>
+            <button id="runIntegration">Integration Tests</button>
+            <button id="runAll">Run All Tests</button>
+            <button id="clearOutput">Clear Output</button>
+        </div>
+
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="stats" id="statsContainer">
+            <div class="stat-card">
+                <div class="stat-value" id="testsRun">0</div>
+                <div class="stat-label">Tests Run</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="testsPassed">0</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="testsFailed">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="testsSkipped">0</div>
+                <div class="stat-label">Skipped</div>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="testCanvas" width="800" height="600"></canvas>
+        </div>
+
+        <div class="test-output" id="testOutput">
+Ready to run tests. Click a test button to begin.
+        </div>
+    </div>
+
+    <script type="module">
+        import { TestValidation } from './TestValidation.js';
+
+        class TestRunner {
+            constructor() {
+                this.validator = new TestValidation();
+                this.output = document.getElementById('testOutput');
+                this.progressBar = document.getElementById('progressBar');
+                this.stats = {
+                    run: document.getElementById('testsRun'),
+                    passed: document.getElementById('testsPassed'),
+                    failed: document.getElementById('testsFailed'),
+                    skipped: document.getElementById('testsSkipped')
+                };
+                this.totalTests = 0;
+                this.completedTests = 0;
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                document.getElementById('runFunctional').onclick = () => this.runTest('functional');
+                document.getElementById('runPerformance').onclick = () => this.runTest('performance');
+                document.getElementById('runCompatibility').onclick = () => this.runTest('compatibility');
+                document.getElementById('runIntegration').onclick = () => this.runTest('integration');
+                document.getElementById('runAll').onclick = () => this.runAllTests();
+                document.getElementById('clearOutput').onclick = () => this.clearOutput();
+            }
+
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const colorClass = type;
+                this.output.innerHTML += `<span class="${colorClass}">[${timestamp}] ${message}</span>\n`;
+                this.output.scrollTop = this.output.scrollHeight;
+            }
+
+            updateProgress(current, total) {
+                const percentage = (current / total) * 100;
+                this.progressBar.style.width = `${percentage}%`;
+            }
+
+            updateStats(results) {
+                let totalRun = 0, totalPassed = 0, totalFailed = 0, totalSkipped = 0;
+
+                for (const [category, tests] of Object.entries(results)) {
+                    if (category === 'summary') continue;
+                    
+                    if (Array.isArray(tests)) {
+                        totalRun += tests.length;
+                        totalPassed += tests.filter(t => t.passed).length;
+                        totalFailed += tests.filter(t => !t.passed && !t.skipped).length;
+                        totalSkipped += tests.filter(t => t.skipped).length;
+                    }
+                }
+
+                this.stats.run.textContent = totalRun;
+                this.stats.passed.textContent = totalPassed;
+                this.stats.failed.textContent = totalFailed;
+                this.stats.skipped.textContent = totalSkipped;
+            }
+
+            async runTest(testType) {
+                this.disableButtons();
+                this.log(`🚀 Starting ${testType} tests...`, 'info');
+
+                try {
+                    let results;
+                    switch (testType) {
+                        case 'functional':
+                            results = await this.validator.runFunctionalTests('testCanvas');
+                            break;
+                        case 'performance':
+                            results = await this.validator.runPerformanceTests('testCanvas');
+                            break;
+                        case 'compatibility':
+                            results = await this.validator.runCompatibilityTests('testCanvas');
+                            break;
+                        case 'integration':
+                            results = await this.validator.runIntegrationTests('testCanvas');
+                            break;
+                    }
+
+                    this.displayResults(testType, results);
+                } catch (error) {
+                    this.log(`❌ Error running ${testType} tests: ${error.message}`, 'error');
+                    console.error(`Test error:`, error);
+                } finally {
+                    this.enableButtons();
+                }
+            }
+
+            async runAllTests() {
+                this.disableButtons();
+                this.log('🏁 Running comprehensive test suite...', 'info');
+
+                try {
+                    const results = await this.validator.runAllTests('testCanvas');
+                    this.displayResults('all', results);
+                    this.updateStats(results);
+                } catch (error) {
+                    this.log(`❌ Error running test suite: ${error.message}`, 'error');
+                    console.error('Test suite error:', error);
+                } finally {
+                    this.enableButtons();
+                }
+            }
+
+            displayResults(testType, results) {
+                this.log(`📊 ${testType.toUpperCase()} TEST RESULTS:`, 'info');
+                
+                if (testType === 'all') {
+                    // Display summary for all tests
+                    if (results.summary) {
+                        this.log(`✅ Total Passed: ${results.summary.totalPassed}`, 'success');
+                        this.log(`❌ Total Failed: ${results.summary.totalFailed}`, 'error');
+                        this.log(`⏭️ Total Skipped: ${results.summary.totalSkipped}`, 'warning');
+                        this.log(`📈 Success Rate: ${results.summary.successRate}%`, 'info');
+                    }
+                } else {
+                    // Display individual test results
+                    if (Array.isArray(results)) {
+                        results.forEach(test => {
+                            const status = test.passed ? '✅' : test.skipped ? '⏭️' : '❌';
+                            const type = test.passed ? 'success' : test.skipped ? 'warning' : 'error';
+                            this.log(`${status} ${test.name}: ${test.message}`, type);
+                            
+                            if (test.details) {
+                                this.log(`   Details: ${test.details}`, 'info');
+                            }
+                        });
+                    }
+                }
+
+                this.log('---', 'info');
+            }
+
+            clearOutput() {
+                this.output.innerHTML = 'Output cleared. Ready to run tests.\n';
+                this.progressBar.style.width = '0%';
+                this.stats.run.textContent = '0';
+                this.stats.passed.textContent = '0';
+                this.stats.failed.textContent = '0';
+                this.stats.skipped.textContent = '0';
+            }
+
+            disableButtons() {
+                document.querySelectorAll('button').forEach(btn => {
+                    if (btn.id !== 'clearOutput') {
+                        btn.disabled = true;
+                    }
+                });
+            }
+
+            enableButtons() {
+                document.querySelectorAll('button').forEach(btn => {
+                    btn.disabled = false;
+                });
+            }
+        }
+
+        // Initialize test runner
+        const testRunner = new TestRunner();
+        testRunner.log('🎮 Test Runner initialized. Canvas and systems ready.', 'success');
+    </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 // menuSystem.js
 
 import { characters } from './characterData.js';
+import { buttonAssets } from './buttons.js';
 
 /**
  * Draws a rounded rectangle path on the given context.
@@ -23,8 +24,7 @@ function drawRoundedRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-export class MenuSystem {
-  /**
+export class MenuSystem {  /**
    * @param {HTMLCanvasElement} canvas
    * @param {Object} options
    * @param {string} options.playerName        - Name to display top-right
@@ -32,21 +32,24 @@ export class MenuSystem {
    * @param {Function} options.onResumeGame    - Callback when Resume clicked or ESC
    * @param {Function} options.onSaveGame      - Callback when Save clicked
    * @param {Function} options.onExitGame      - Callback when Quit clicked
+   * @param {Function} options.onShop          - Callback when Shop clicked
    */
   constructor(canvas, {
     playerName    = 'Player',
     currentCharId = 0,
     onResumeGame  = () => {},
     onSaveGame    = () => {},
-    onExitGame    = () => {}
+    onExitGame    = () => {},
+    onShop        = () => {}
   }) {
     this.canvas       = canvas;
     if (!canvas) throw new Error('MenuSystem requires a valid canvas element');
     this.ctx          = canvas.getContext('2d');
     this.playerName  = playerName;
     this.currentCharId = currentCharId;
-    this.callbacks    = { onResumeGame, onSaveGame, onExitGame };
+    this.callbacks    = { onResumeGame, onSaveGame, onExitGame, onShop };
     this.buttons      = [];
+    this.hoveredButton = null; // Track hovered button for visual feedback
 
     // Preload sprites
     this.spriteMap = new Map();
@@ -54,12 +57,15 @@ export class MenuSystem {
       const img = new Image();
       img.src = ch.sprite;
       this.spriteMap.set(ch.id, img);
-    });
-
-    this._clickHandler = this.handleClick.bind(this);
+    });    this._clickHandler = this.handleClick.bind(this);
     this._keyHandler   = this.handleKey.bind(this);
+    this._mouseMoveHandler = this.handleMouseMove.bind(this);
+    this._resizeHandler = this.handleResize.bind(this);
+    
     canvas.addEventListener('click', this._clickHandler);
+    canvas.addEventListener('mousemove', this._mouseMoveHandler);
     window.addEventListener('keydown', this._keyHandler);
+    window.addEventListener('resize', this._resizeHandler);
 
     this.animate = this.animate.bind(this);
     this._frame = requestAnimationFrame(this.animate);
@@ -69,86 +75,109 @@ export class MenuSystem {
   animate() {
     this.draw();
     this._frame = requestAnimationFrame(this.animate);
-  }
-
-  /** Draw pause menu */
+  }  /** Draw pause menu */
   draw() {
     const ctx = this.ctx;
     const W = this.canvas.width;
     const H = this.canvas.height;
     this.buttons = [];
 
-    // Background
+    // Calculate responsive scaling factors based on actual viewport
+    const viewportScale = Math.min(
+      window.innerWidth / 1920,   // Reference width
+      window.innerHeight / 1080   // Reference height
+    );
+    
+    // Canvas scale relative to its actual display size
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const canvasScale = Math.min(
+      canvasRect.width / 800,    // Reference canvas width
+      canvasRect.height / 600    // Reference canvas height
+    );
+    
+    // Combine both scales with bounds
+    const combinedScale = Math.min(viewportScale, canvasScale);
+    const scale = Math.max(0.3, Math.min(1.5, combinedScale));    // Background
     ctx.fillStyle = '#1E3A8A';
     ctx.fillRect(0, 0, W, H);
 
-    // Light panel behind sprite
-    const baseSize = Math.min(W, H) * 0.4;
-    const panelW = baseSize + 40;
-    const panelH = baseSize + 40;
+    // Light panel behind sprite - responsive sizing
+    const baseSize = Math.min(W, H) * 0.25; // Even smaller for better fit
+    const panelPadding = Math.max(20, 30 * scale);
+    const panelW = baseSize + panelPadding;
+    const panelH = baseSize + panelPadding;
     const panelX = (W - panelW) / 2;
-    const panelY = (H - panelH) / 2 - 20;
+    const panelY = (H - panelH) / 2 - (15 * scale);
 
     ctx.fillStyle = '#3B82F6';
-    drawRoundedRect(ctx, panelX, panelY, panelW, panelH, 20);
+    drawRoundedRect(ctx, panelX, panelY, panelW, panelH, Math.max(10, 15 * scale));
     ctx.fill();
 
-    // Sprite - FIX STRETCHING HERE
+    // Sprite - maintain aspect ratio and scale properly
     const sprite = this.spriteMap.get(this.currentCharId) || new Image();
     if (sprite.complete && sprite.naturalWidth) {
       const { naturalWidth: nw, naturalHeight: nh } = sprite;
       
       // Calculate scale to fit within baseSize while maintaining aspect ratio
-      const scaleX = baseSize / nw;
-      const scaleY = baseSize / nh;
-      const scale = Math.min(scaleX, scaleY); // Use minimum to prevent stretching
+      const spriteScale = Math.min(baseSize / nw, baseSize / nh);
       
-      const drawW = nw * scale;
-      const drawH = nh * scale;
+      const drawW = nw * spriteScale;
+      const drawH = nh * spriteScale;
       const drawX = (W - drawW) / 2;
-      const drawY = (H - drawH) / 2 - 20;
+      const drawY = (H - drawH) / 2 - (15 * scale);
       
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(sprite, drawX, drawY, drawW, drawH);
     }
 
-    // Player name top-right
+    // Player name top-right - responsive font size and positioning
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 24px sans-serif';
+    ctx.font = `bold ${Math.max(12, Math.min(32, 20 * scale))}px sans-serif`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
-    ctx.fillText(this.playerName, W - 20, 20);
+    ctx.fillText(this.playerName, W - Math.max(15, 15 * scale), Math.max(15, 15 * scale));
 
-    // Buttons top-left
-    const btnW = 160;
-    const btnH = 40;
-    const margin = 20;
+    // Buttons top-left - responsive sizing with better scaling
+    const btnW = Math.max(100, Math.min(200, 140 * scale));
+    const btnH = Math.max(25, Math.min(50, 35 * scale));
+    const margin = Math.max(10, 15 * scale);
+    const buttonSpacing = Math.max(5, 8 * scale);
     let x = margin;
     let y = margin;
 
-    this._addButton('Resume Game', x, y, btnW, btnH, 'resume');
-    y += btnH + 10;
-    this._addButton('Save Game',   x, y, btnW, btnH, 'save');
-    y += btnH + 10;
-    this._addButton('Quit Game',   x, y, btnW, btnH, 'quit');
+    this._addButton('resume', x, y, btnW, btnH, 'resume', scale);
+    y += btnH + buttonSpacing;
+    this._addButton('save', x, y, btnW, btnH, 'save', scale);
+    y += btnH + buttonSpacing;
+    this._addButton('shop', x, y, btnW, btnH, 'shop', scale);
+    y += btnH + buttonSpacing;
+    this._addButton('quit', x, y, btnW, btnH, 'quit', scale);
+  }/** Draws and registers a button using the button assets system */
+  _addButton(buttonName, x, y, w, h, action, scale = 1) {
+    const isHovered = this.hoveredButton === action;
+    const buttonInfo = buttonAssets.drawButton(this.ctx, buttonName, x, y, w, h, isHovered, scale);
+    buttonInfo.action = action; // Override action if different from buttonName
+    this.buttons.push(buttonInfo);
   }
+  /** Mouse move handler for button hover effects */
+  handleMouseMove(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+    const my = (e.clientY - rect.top)  * (this.canvas.height / rect.height);
 
-  /** Draws and registers a button */
-  _addButton(label, x, y, w, h, action) {
-    const ctx = this.ctx;
-    ctx.fillStyle = '#2563EB';
-    drawRoundedRect(ctx, x, y, w, h, 8);
-    ctx.fill();
-    ctx.strokeStyle = '#1E40AF';
-    ctx.lineWidth = 2;
-    drawRoundedRect(ctx, x, y, w, h, 8);
-    ctx.stroke();
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '16px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, x + w / 2, y + h / 2);
-    this.buttons.push({ x, y, w, h, action });
+    let hoveredAction = null;
+    for (const btn of this.buttons) {
+      if (mx >= btn.x && mx <= btn.x + btn.w && my >= btn.y && my <= btn.y + btn.h) {
+        hoveredAction = btn.action;
+        break;
+      }
+    }
+
+    if (this.hoveredButton !== hoveredAction) {
+      this.hoveredButton = hoveredAction;
+      // Redraw to update hover state
+      this.draw();
+    }
   }
 
   /** Click handler */
@@ -161,21 +190,30 @@ export class MenuSystem {
       if (mx >= btn.x && mx <= btn.x + btn.w && my >= btn.y && my <= btn.y + btn.h) {
         if (btn.action === 'resume') this.callbacks.onResumeGame();
         else if (btn.action === 'save') this.callbacks.onSaveGame();
+        else if (btn.action === 'shop') this.callbacks.onShop();
         else if (btn.action === 'quit') this.callbacks.onExitGame();
         return;
       }
     }
   }
-
   /** ESC resumes */
   handleKey(e) {
     if (e.key === 'Escape') this.callbacks.onResumeGame();
+  }
+  /** Handle window resize */
+  handleResize() {
+    // Redraw on resize to recalculate scaling
+    setTimeout(() => {
+      this.draw();
+    }, 100); // Small delay to ensure canvas has updated its size
   }
 
   /** Cleanup */
   destroy() {
     cancelAnimationFrame(this._frame);
     this.canvas.removeEventListener('click', this._clickHandler);
+    this.canvas.removeEventListener('mousemove', this._mouseMoveHandler);
     window.removeEventListener('keydown', this._keyHandler);
+    window.removeEventListener('resize', this._resizeHandler);
   }
 }
