@@ -1,14 +1,9 @@
-IyBCbG94eSBSaXZhbHMKCioqTW9kdWxhciBIVE1MNSBDYW52YXMgR2FtZSoq
-CgpBIG1vZGVybiwgYWN0aW9uLXBhY2tlZCBicm93c2VyIGdhbWUgd2l0aCBj
-b21wcmVoZW5zaXZlIHJlZmFjdG9yaW5nIGZvciBzY2FsYWJpbGl0eSBhbmQg
-bWFpbnRhaW5hYmlsaXR5LiBGZWF0dXJpbmcgZHluYW1pYyBwbGF5ZXIgbW92
-ZW1lbnQsIG11bHRpcGxlIGNoYXJhY3RlciB0eXBlcywgYm9zcyBiYXR0bGVz
-LCBhbmQgcmVzcG9uc2l2ZSBkZXNpZ24uCgojIyBGZWF0dXJlcwotIER5bmFt
-aWMgcGxheWVyIG1vdmVtZW50IGFuZCBjb21iYXQKLSBNdWx0aXBsZSBjaGFy
-YWN0ZXIgdHlwZXMgYW5kIGFiaWxpdGllcwotIEJvc3MgYmF0dGxlcyBhbmQg
-bW9iIGVuY291bnRlcnMKLSBSZXNwb25zaXZlIGRlc2lnbiBmb3IgYWxsIGRl
-dmljZXMKLSBBZHZhbmNlZCBzY29yaW5nIGFuZCBhY2hpZXZlbWVudCBzeXN0
-ZW0KLSBQcm9mZXNzaW9uYWwtZ3JhZGUgYXJjaGl0ZWN0dXJlCgojIyBTdGF0
-dXMKQ29tcGxldGUuIEJ1aWx0IGFzIGEgYnJvd3NlciBnYW1pbmcgZXhwZXJp
-bWVudC4KCioiQnVpbHQgYnkgSm/Do28gQ2FsZGFzIHwgam9hb2NjYWxkYXNA
-Z21haWwuY29tIio=
+# bloxy1 — deprecated (early prototype)
+
+> ⚠️ **Deprecated.** An early prototype of Bloxy Rivals.
+> The canonical game lives at **[`bloxyrivals`](https://github.com/joaoccaldas/bloxyrivals)**
+> — play it at https://joaoccaldas.github.io/bloxyrivals/
+
+Kept for history only. The one thing worth keeping is its **test harnesses**
+(`TestValidation.js`, `test-runner.html`, `testMedalSystem.html`, `landing-page-test.js`) —
+harvest those into `bloxyrivals`, then retire this repo.
