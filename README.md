@@ -1,14 +1,28 @@
-IyBCbG94eSBSaXZhbHMKCioqTW9kdWxhciBIVE1MNSBDYW52YXMgR2FtZSoq
-CgpBIG1vZGVybiwgYWN0aW9uLXBhY2tlZCBicm93c2VyIGdhbWUgd2l0aCBj
-b21wcmVoZW5zaXZlIHJlZmFjdG9yaW5nIGZvciBzY2FsYWJpbGl0eSBhbmQg
-bWFpbnRhaW5hYmlsaXR5LiBGZWF0dXJpbmcgZHluYW1pYyBwbGF5ZXIgbW92
-ZW1lbnQsIG11bHRpcGxlIGNoYXJhY3RlciB0eXBlcywgYm9zcyBiYXR0bGVz
-LCBhbmQgcmVzcG9uc2l2ZSBkZXNpZ24uCgojIyBGZWF0dXJlcwotIER5bmFt
-aWMgcGxheWVyIG1vdmVtZW50IGFuZCBjb21iYXQKLSBNdWx0aXBsZSBjaGFy
-YWN0ZXIgdHlwZXMgYW5kIGFiaWxpdGllcwotIEJvc3MgYmF0dGxlcyBhbmQg
-bW9iIGVuY291bnRlcnMKLSBSZXNwb25zaXZlIGRlc2lnbiBmb3IgYWxsIGRl
-dmljZXMKLSBBZHZhbmNlZCBzY29yaW5nIGFuZCBhY2hpZXZlbWVudCBzeXN0
-ZW0KLSBQcm9mZXNzaW9uYWwtZ3JhZGUgYXJjaGl0ZWN0dXJlCgojIyBTdGF0
-dXMKQ29tcGxldGUuIEJ1aWx0IGFzIGEgYnJvd3NlciBnYW1pbmcgZXhwZXJp
-bWVudC4KCioiQnVpbHQgYnkgSm/Do28gQ2FsZGFzIHwgam9hb2NjYWxkYXNA
-Z21haWwuY29tIio=
+# Bloxy Rivals
+
+**Modular HTML5 Canvas Game**
+
+A modern, action-packed browser game with comprehensive refactoring for scalability and maintainability. Featuring dynamic player movement, multiple character types, boss battles, and responsive design.
+
+## Features
+- Dynamic player movement and combat
+- Multiple character types and abilities
+- Boss battles and mob encounters
+- Responsive design for all devices
+- Advanced scoring and achievement system
+- Professional-grade architecture
+
+## Status
+Complete. Built as a browser gaming experiment.
+
+*"Built by João Caldas | joaoccaldas@gmail.com"*
+## Lineage
+
+This is an early Bloxy Rivals implementation and a useful snapshot of the game's modularization/refactoring experiments. It is preserved as an **ITERATION**, not presented as the only canonical version.
+
+## Project context
+
+This is a personal, self-directed learning project by João Caldas. I learn game development and software engineering by building playable systems, studying failures, refactoring experiments, and comparing different approaches.
+
+AI tools are used extensively during research, design, coding, debugging, testing, asset ideation, and documentation as part of that learning process. AI-generated suggestions are treated as inputs to review, not proof of correctness. Gameplay behavior, persistence, security/privacy boundaries, and technical claims should be tested and documented.
+
