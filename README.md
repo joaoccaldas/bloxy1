@@ -26,3 +26,7 @@ This is a personal, self-directed learning project by João Caldas. I learn game
 
 AI tools are used extensively during research, design, coding, debugging, testing, asset ideation, and documentation as part of that learning process. AI-generated suggestions are treated as inputs to review, not proof of correctness. Gameplay behavior, persistence, security/privacy boundaries, and technical claims should be tested and documented.
 
+## Canonical project
+
+The 2026-09-27 lineage audit identifies [bloxyrivals](https://github.com/joaoccaldas/bloxyrivals) as the **canonical candidate** for future Bloxy Rivals work. This repository remains valuable as an earlier refactoring/prototyping snapshot, including migration, validation, and performance-comparison experiments.
+
